@@ -37,7 +37,6 @@ The data used in this analysis comes from the `Default` dataset within the `ISLR
     *   Adjust the probability threshold to **0.1**, repeat the prediction and evaluation, and visualize the new decision boundary to observe the impact of the threshold change.
 6.  **Quadratic Discriminant Analysis (QDA) Model**:
     *   Train a QDA model using the training set (`default ~ income + balance`).
-    *   *(Note: The original Rmd file might have reused logistic regression predictions/thresholds for QDA evaluation; this section describes the intended QDA steps.)*
     *   Make predictions on the test set using the QDA model.
     *   Visualize the test data points and the decision boundary corresponding to a QDA posterior probability of 0.1.
 7.  **Results Discussion**: Analyze the model results and discuss the pros and cons of different models and thresholds.
