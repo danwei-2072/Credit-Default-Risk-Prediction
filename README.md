@@ -1,4 +1,4 @@
-# Credit Default Risk Prediction
+# Credit Default Risk Prediction Using R
 
 ## Project Overview
 
