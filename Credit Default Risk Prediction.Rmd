@@ -1,0 +1,219 @@
+---
+title: "Credit Default Risk Prediction"
+author: "Dan Wei"
+date: "2024-03-25"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r,eval=TRUE}
+#install.packages("tidyverse")
+library(tidyverse)
+#install.packages("ggplot")
+library(ggplot2)
+#install.packages("MASS")
+library(MASS)
+
+```
+
+# Applying Logistic Regression to credit default prediction
+
+```{r, eval=TRUE}
+# install.packages("ISLR2")
+library(ISLR2)
+
+# load dataset
+df_default <- Default
+```
+
+
+```{r, eval=TRUE}
+# ignore the student column
+df_default$student <- NULL
+
+# Split the dataset into a training set and a test set
+set.seed(1)
+train_ind <- sample(1:nrow(df_default), size = nrow(df_default)*0.8)
+
+df_train <- df_default[train_ind, ]
+df_test <- df_default[-train_ind, ]
+
+nrow(df_train)
+nrow(df_test)
+```
+
+```{r, eval=TRUE}
+# Visualise the relationship between balance,income and default
+ggplot(data=df_default) +
+  geom_point(aes(x=balance, y=income, color=default), alpha = 0.5)
+```
+
+Hypothesis: default may be related to high balance, and income level may not have a direct impact on default risk.
+
+
+```{r, eval=TRUE}
+logreg1 <- glm(default ~ balance+income, data = df_train, family = binomial)
+summary(logreg1)
+```
+```{r, eval=TRUE}
+# Use the model to make predictions
+df_test$predicted_class <- if_else(predict(logreg1, newdata = df_test, type = "response") > 0.5, "Yes", "No")
+
+# Calculate the number of differences between the actual value and the predicted value
+misclassified <- sum(df_test$predicted_class != df_test$default)
+
+# Calculate misclassification rate
+misclassification_rate <- misclassified / nrow(df_test)
+misclassification_rate 
+```
+
+The misclassification_rate is 2.6%.
+
+
+```{r, eval=TRUE}
+
+# True Positive count
+TP <- sum(df_test$default == "Yes" & df_test$predicted_class == "Yes")
+# True Negative count
+TN <- sum(df_test$default == "No" & df_test$predicted_class == "No")
+# False Negative count
+FN <- sum(df_test$default == "Yes" & df_test$predicted_class == "No")
+# False Positive count
+FP <- sum(df_test$default == "No" & df_test$predicted_class == "Yes")
+
+confusion_matrix = matrix(c(TP,FN,FP,TN), 2, 2)
+rownames(confusion_matrix) <- c("Actual Yes", "Actual No")
+colnames(confusion_matrix) <- c("Pred Yes", "Pred No")
+print(confusion_matrix)
+```
+
+
+```{r, eval=TRUE}
+# Create a prediction grid on a plane
+plot_grid <- expand.grid(income = seq(min(df_test$income), max(df_test$income), length.out = 100),
+                         balance = seq(min(df_test$balance), max(df_test$balance), length.out = 100))
+
+plot_grid$predicted_probability <- predict(logreg1, newdata = plot_grid, type = "response")
+
+# Plot test set data points and decision boundaries
+ggplot() +
+  geom_point(data = df_test, aes(x = balance, y = income, color = default), alpha = 0.5) +
+  geom_contour(data = plot_grid, aes(x = balance, y = income, z = predicted_probability), 
+               breaks = 0.5, color = "black") +
+  labs(title = "Logistic Regression Decision Boundary",
+       x = "Balance",
+       y = "Income",
+       color = "Actual Class") +
+  theme_minimal()
+```
+
+The decision boundary of the classification regression model looks like a line from the upper left to the lower right on the balance-income plane. This curve divides the data points into two categories: those predicted to default and those predicted not to default.
+While most of the non-default data points appear to be classified correctly, there are some default points that are classified as non-default, indicating that there may be some prediction error.
+
+
+```{r, eval=TRUE}
+# Setting the decision boundary at probability p=10%
+
+# Use the model to make predictions
+df_test$predicted_class <- if_else(predict(logreg1, newdata = df_test, type = "response") > 0.1, "Yes", "No")
+
+# Calculate the number of differences between the actual value and the predicted value
+misclassified <- sum(df_test$predicted_class != df_test$default)
+
+# Calculate misclassification rate
+misclassification_rate <- misclassified / nrow(df_test)
+misclassification_rate 
+
+
+# True Positive count
+TP <- sum(df_test$default == "Yes" & df_test$predicted_class == "Yes")
+# True Negative count
+TN <- sum(df_test$default == "No" & df_test$predicted_class == "No")
+# False Negative count
+FN <- sum(df_test$default == "Yes" & df_test$predicted_class == "No")
+# False Positive count
+FP <- sum(df_test$default == "No" & df_test$predicted_class == "Yes")
+
+confusion_matrix = matrix(c(TP,FN,FP,TN), 2, 2)
+rownames(confusion_matrix) <- c("Actual Yes", "Actual No")
+colnames(confusion_matrix) <- c("Pred Yes", "Pred No")
+print(confusion_matrix)
+
+# Create a prediction grid on a plane
+plot_grid <- expand.grid(income = seq(min(df_test$income), max(df_test$income), length.out = 100),
+                         balance = seq(min(df_test$balance), max(df_test$balance), length.out = 100))
+
+plot_grid$predicted_probability <- predict(logreg1, newdata = plot_grid, type = "response")
+
+# Plot test set data points and decision boundaries
+ggplot() +
+  geom_point(data = df_test, aes(x = balance, y = income, color = default), alpha = 0.5) +
+  geom_contour(data = plot_grid, aes(x = balance, y = income, z = predicted_probability), 
+               breaks = 0.1, color = "black") +
+  labs(title = "Logistic Regression Decision Boundary with p=10%",
+       x = "Balance",
+       y = "Income",
+       color = "Actual Class") +
+  theme_minimal()
+
+
+```
+
+
+```{r, eval=TRUE}
+# fit a (multiple) logistic regression model using QDA method.
+qda_model <- qda(default ~ income + balance, data = df_train)
+
+df_test <- df_test %>% 
+  mutate(
+    pred_qda = predict(qda_model, newdata = df_test)$class
+  )
+
+# Calculate the number of differences between the actual value and the predicted value
+misclassified <- sum(df_test$predicted_class != df_test$default)
+
+# Calculate misclassification rate
+misclassification_rate <- misclassified / nrow(df_test)
+misclassification_rate 
+
+
+# True Positive count
+TP <- sum(df_test$default == "Yes" & df_test$predicted_class == "Yes")
+# True Negative count
+TN <- sum(df_test$default == "No" & df_test$predicted_class == "No")
+# False Negative count
+FN <- sum(df_test$default == "Yes" & df_test$predicted_class == "No")
+# False Positive count
+FP <- sum(df_test$default == "No" & df_test$predicted_class == "Yes")
+
+confusion_matrix = matrix(c(TP,FN,FP,TN), 2, 2)
+rownames(confusion_matrix) <- c("Actual Yes", "Actual No")
+colnames(confusion_matrix) <- c("Pred Yes", "Pred No")
+print(confusion_matrix)
+
+# Create a prediction grid on a plane
+plot_grid <- expand.grid(income = seq(min(df_test$income), max(df_test$income), length.out = 100),
+                         balance = seq(min(df_test$balance), max(df_test$balance), length.out = 100))
+
+# Calculate the posterior probability of each point on the grid
+plot_grid$posterior_probs <- predict(qda_model, newdata = plot_grid)$posterior[, "Yes"]
+
+# Plot test set data points and decision boundaries
+ggplot(df_test, aes(x = balance, y = income)) +
+  geom_point(aes(color = default), alpha = 0.5) +
+  geom_contour(data = plot_grid, aes(z = posterior_probs, x = balance, y = income), breaks = 0.1, color = "black") +
+  labs(title = "QDA Decision Boundary with p=10%",
+       x = "Balance", y = "Income", color = "Actual Class") +
+  theme_minimal()
+
+```
+
+
+The data involved in algorithm training may contain sensitive personal information. Ensuring the confidentiality of this information and preventing data leakage is critical to protecting personal privacy.
+
+The decision-making process of the algorithm should be transparent and provide a clear basis for decision-making. When it comes to important decisions like loan or credit card applications, customers have the right to know how algorithms make decisions and based on what criteria.
+
+When an algorithm makes an error, such as incorrectly denying a credit application, it should be clear who is responsible. There needs to be clear procedures to correct errors and provide remedies to affected individuals.
