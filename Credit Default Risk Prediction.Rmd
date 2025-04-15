@@ -159,12 +159,10 @@ ggplot() +
        color = "Actual Class") +
   theme_minimal()
 
-
 ```
 
 
 ```{r, eval=TRUE}
-# fit a (multiple) logistic regression model using QDA method.
 qda_model <- qda(default ~ income + balance, data = df_train)
 
 df_test <- df_test %>% 
@@ -173,26 +171,29 @@ df_test <- df_test %>%
   )
 
 # Calculate the number of differences between the actual value and the predicted value
-misclassified <- sum(df_test$predicted_class != df_test$default)
+misclassified_qda <- sum(df_test$pred_qda != df_test$default) 
 
-# Calculate misclassification rate
-misclassification_rate <- misclassified / nrow(df_test)
-misclassification_rate 
+# Calculate misclassification rate for QDA
+misclassification_rate_qda <- misclassified_qda / nrow(df_test) 
+print(paste("QDA Misclassification Rate:", round(misclassification_rate_qda, 4))) # Display the rate
 
 
-# True Positive count
-TP <- sum(df_test$default == "Yes" & df_test$predicted_class == "Yes")
-# True Negative count
-TN <- sum(df_test$default == "No" & df_test$predicted_class == "No")
-# False Negative count
-FN <- sum(df_test$default == "Yes" & df_test$predicted_class == "No")
-# False Positive count
-FP <- sum(df_test$default == "No" & df_test$predicted_class == "Yes")
+# True Positive count using QDA predictions
+TP_qda <- sum(df_test$default == "Yes" & df_test$pred_qda == "Yes") # CORRECTED: Use pred_qda
+# True Negative count using QDA predictions
+TN_qda <- sum(df_test$default == "No" & df_test$pred_qda == "No") # CORRECTED: Use pred_qda
+# False Negative count using QDA predictions
+FN_qda <- sum(df_test$default == "Yes" & df_test$pred_qda == "No") # CORRECTED: Use pred_qda
+# False Positive count using QDA predictions
+FP_qda <- sum(df_test$default == "No" & df_test$pred_qda == "Yes") # CORRECTED: Use pred_qda
 
-confusion_matrix = matrix(c(TP,FN,FP,TN), 2, 2)
-rownames(confusion_matrix) <- c("Actual Yes", "Actual No")
-colnames(confusion_matrix) <- c("Pred Yes", "Pred No")
-print(confusion_matrix)
+
+# Create the confusion matrix for QDA
+confusion_matrix_qda = matrix(c(TP_qda, FN_qda, FP_qda, TN_qda), 2, 2, 
+                              dimnames = list(c("Actual Yes", "Actual No"),
+                                              c("Pred Yes", "Pred No")))
+print("QDA Confusion Matrix:")
+print(confusion_matrix_qda)
 
 # Create a prediction grid on a plane
 plot_grid <- expand.grid(income = seq(min(df_test$income), max(df_test$income), length.out = 100),
