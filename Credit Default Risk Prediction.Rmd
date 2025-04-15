@@ -179,13 +179,13 @@ print(paste("QDA Misclassification Rate:", round(misclassification_rate_qda, 4))
 
 
 # True Positive count using QDA predictions
-TP_qda <- sum(df_test$default == "Yes" & df_test$pred_qda == "Yes") # CORRECTED: Use pred_qda
+TP_qda <- sum(df_test$default == "Yes" & df_test$pred_qda == "Yes") 
 # True Negative count using QDA predictions
-TN_qda <- sum(df_test$default == "No" & df_test$pred_qda == "No") # CORRECTED: Use pred_qda
+TN_qda <- sum(df_test$default == "No" & df_test$pred_qda == "No") 
 # False Negative count using QDA predictions
-FN_qda <- sum(df_test$default == "Yes" & df_test$pred_qda == "No") # CORRECTED: Use pred_qda
+FN_qda <- sum(df_test$default == "Yes" & df_test$pred_qda == "No") 
 # False Positive count using QDA predictions
-FP_qda <- sum(df_test$default == "No" & df_test$pred_qda == "Yes") # CORRECTED: Use pred_qda
+FP_qda <- sum(df_test$default == "No" & df_test$pred_qda == "Yes") 
 
 
 # Create the confusion matrix for QDA
